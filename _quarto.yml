@@ -1,0 +1,11 @@
+project:
+  type: website
+  output-dir: _site
+
+website:
+  title: "Car Stats Explorer"
+  navbar:
+    title: "Car Stats Explorer"
+    left:
+      - text: Home
+        href: index.qmd

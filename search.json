@@ -1,9 +1,93 @@
 [
   {
-    "objectID": "project.html",
-    "href": "project.html",
+    "objectID": "index.html",
+    "href": "index.html",
     "title": "Car Stats Explorer",
     "section": "",
-    "text": "Project"
+    "text": "This website lets you explore how vehicle price relates to engine horsepower across different car classes. Use the interactive chart on the Exploration page to compare makes, models, and sizes, and see how the market shifts between compact, midsize, and large vehicles.\n\n\n\nCAR STATS EXPLORER\nDiscover what makes each car different\nBrowse individual vehicles, compare their key specifications, and explore how price and horsepower vary across car sizes.\nExplore vehicle trends\n\n\n\n\n\nBrowse vehicles\nSelect a make, model, and year to see its details.\n\n\nCompare specifications\nReview price, horsepower, size, engine, and drivetrain.\n\n\nExplore the data\nUse the interactive chart to compare vehicle trends.\n\n\n\n\nChoose a vehicle:\n\n\n\n\n\nChoose a vehicle to search for a matching make and model photo.\n\n\nView photo source\n\n\n\nVehicle"
+  },
+  {
+    "objectID": "about.html",
+    "href": "about.html",
+    "title": "About the Data",
+    "section": "",
+    "text": "This page documents the data behind the Home, Exploration, and Story pages."
+  },
+  {
+    "objectID": "about.html#data-source",
+    "href": "about.html#data-source",
+    "title": "About the Data",
+    "section": "Data source",
+    "text": "Data source\nThe site uses the Car Features and MSRP dataset, distributed as a CSV in this GitHub Gist. The original dataset contains 11,914 vehicle records."
+  },
+  {
+    "objectID": "about.html#variables-used",
+    "href": "about.html#variables-used",
+    "title": "About the Data",
+    "section": "Variables used",
+    "text": "Variables used\n\nMSRP — manufacturer’s suggested retail price, in U.S. dollars\nEngine HP — engine horsepower\nMake and Model — vehicle manufacturer and model\nYear — model year\ncity mpg and highway MPG — source-reported city and highway efficiency\nVehicle Size and Vehicle Style — the dataset’s size and body-style categories"
+  },
+  {
+    "objectID": "about.html#limitations",
+    "href": "about.html#limitations",
+    "title": "About the Data",
+    "section": "Limitations",
+    "text": "Limitations\n\nMSRP is a manufacturer’s suggested price, not necessarily the price someone pays. Prices are not adjusted for inflation across model years.\nMPG values for electric vehicles represent MPGe, not gasoline consumption.\nHorsepower is only one part of performance; the dataset does not measure acceleration, handling, reliability, repair costs, or actual ownership expenses.\nThese records describe listed vehicle configurations. They are not sales-weighted, and category averages do not describe every vehicle in a category."
+  },
+  {
+    "objectID": "project.html",
+    "href": "project.html",
+    "title": "Exploration",
+    "section": "",
+    "text": "This exploration page is where you can view and compare vehicle prices, horsepower, and size categories across the dataset."
+  },
+  {
+    "objectID": "project.html#car-price-vs.-horsepower",
+    "href": "project.html#car-price-vs.-horsepower",
+    "title": "Exploration",
+    "section": "Car Price vs. Horsepower",
+    "text": "Car Price vs. Horsepower"
+  },
+  {
+    "objectID": "project.html#horsepower-vs.-gas-mileage",
+    "href": "project.html#horsepower-vs.-gas-mileage",
+    "title": "Exploration",
+    "section": "Horsepower vs. Gas Mileage",
+    "text": "Horsepower vs. Gas Mileage\nCompare engine power with city and highway fuel economy. Use the chart menu to select a vehicle type. Teal points show city MPG; coral points show highway MPG. Star markers identify cars with both above-median horsepower and above-median MPG across the dataset.\n\n\n\nTeal dot: City MPG\n\n\n\nCoral dot: Highway MPG\n\n\n★\nStar: above-median horsepower and MPG"
+  },
+  {
+    "objectID": "project.html#which-vehicle-type-gets-the-best-gas-mileage",
+    "href": "project.html#which-vehicle-type-gets-the-best-gas-mileage",
+    "title": "Exploration",
+    "section": "Which Vehicle Type Gets the Best Gas Mileage?",
+    "text": "Which Vehicle Type Gets the Best Gas Mileage?\nCompare average fuel economy across the five vehicle types. Select City MPG or Highway MPG from the chart menu."
+  },
+  {
+    "objectID": "story.html",
+    "href": "story.html",
+    "title": "Story",
+    "section": "",
+    "text": "Each story asks a different question about price, vehicle size, performance, and fuel economy. The findings below use cleaned vehicle records; the About the Data page explains the source and cleaning steps.\n\n\n\nAcross 11,129 cleaned vehicle configurations, MSRP and horsepower have a positive correlation of 0.66. Higher-horsepower vehicles tend to cost more, but the relationship is not absolute.\n\n\n\n\n\n\n\n\n\nCoral points have below-median MSRP ($30,600) and above-median horsepower (239 hp). Examples among 2010-and-newer vehicles include:\n\nToyota Tundra (2015): 381 hp at $29,120.\nHyundai Genesis Coupe (2015): 348 hp at $26,750.\nNissan 370Z (2015): 332 hp at $29,990.\n\nPrice alone does not guarantee more horsepower: 797 of 5,560 configurations priced above the median have median-or-lower horsepower. Horsepower is only one part of performance.\n\n\n\nIn the cleaned data, average city and highway MPG generally decline from compact to midsize to large vehicles. For example, compact vehicles average 21.7 city / 28.6 highway MPG, compared with 15.6 city / 22 highway MPG for large vehicles.\n\n\n\n\n\n\n\n\n\nThere are exceptions. A 2014 Infiniti Q70, classified as large, is listed at 29 city / 34 highway MPG—higher than the compact-size averages. Size is a useful broad pattern, not a rule for every model. Electric vehicles use MPG-equivalent (MPGe) ratings in these source fields, so the chart compares reported efficiency rather than literal gallons for every car.\n\n\n\nFor this comparison, “high performance and good fuel economy” means above the cleaned dataset medians: 239 hp, 18 city MPG, and 25 highway MPG. Vehicles that clear all three thresholds include:\n\nInfiniti Q50 (2015): 360 hp, 29 city / 36 highway MPG.\nBMW 5 Series (2015): 255 hp, 26 city / 38 highway MPG.\nVolvo S60 (2016): 240 hp, 26 city / 38 highway MPG.\n\nThese are examples, not universal recommendations: they stand out because their horsepower and both MPG ratings exceed the dataset medians. Their prices, vehicle sizes, and ownership costs differ, and the dataset does not measure reliability, acceleration, or what buyers actually pay. Compare individual models on the Exploration tab before drawing conclusions."
+  },
+  {
+    "objectID": "story.html#story-1-is-more-horsepower-worth-the-price",
+    "href": "story.html#story-1-is-more-horsepower-worth-the-price",
+    "title": "Story",
+    "section": "",
+    "text": "Across 11,129 cleaned vehicle configurations, MSRP and horsepower have a positive correlation of 0.66. Higher-horsepower vehicles tend to cost more, but the relationship is not absolute.\n\n\n\n\n\n\n\n\n\nCoral points have below-median MSRP ($30,600) and above-median horsepower (239 hp). Examples among 2010-and-newer vehicles include:\n\nToyota Tundra (2015): 381 hp at $29,120.\nHyundai Genesis Coupe (2015): 348 hp at $26,750.\nNissan 370Z (2015): 332 hp at $29,990.\n\nPrice alone does not guarantee more horsepower: 797 of 5,560 configurations priced above the median have median-or-lower horsepower. Horsepower is only one part of performance."
+  },
+  {
+    "objectID": "story.html#story-2-do-bigger-cars-use-more-gas",
+    "href": "story.html#story-2-do-bigger-cars-use-more-gas",
+    "title": "Story",
+    "section": "",
+    "text": "In the cleaned data, average city and highway MPG generally decline from compact to midsize to large vehicles. For example, compact vehicles average 21.7 city / 28.6 highway MPG, compared with 15.6 city / 22 highway MPG for large vehicles.\n\n\n\n\n\n\n\n\n\nThere are exceptions. A 2014 Infiniti Q70, classified as large, is listed at 29 city / 34 highway MPG—higher than the compact-size averages. Size is a useful broad pattern, not a rule for every model. Electric vehicles use MPG-equivalent (MPGe) ratings in these source fields, so the chart compares reported efficiency rather than literal gallons for every car."
+  },
+  {
+    "objectID": "story.html#story-3-the-best-balance-between-performance-and-fuel-efficiency",
+    "href": "story.html#story-3-the-best-balance-between-performance-and-fuel-efficiency",
+    "title": "Story",
+    "section": "",
+    "text": "For this comparison, “high performance and good fuel economy” means above the cleaned dataset medians: 239 hp, 18 city MPG, and 25 highway MPG. Vehicles that clear all three thresholds include:\n\nInfiniti Q50 (2015): 360 hp, 29 city / 36 highway MPG.\nBMW 5 Series (2015): 255 hp, 26 city / 38 highway MPG.\nVolvo S60 (2016): 240 hp, 26 city / 38 highway MPG.\n\nThese are examples, not universal recommendations: they stand out because their horsepower and both MPG ratings exceed the dataset medians. Their prices, vehicle sizes, and ownership costs differ, and the dataset does not measure reliability, acceleration, or what buyers actually pay. Compare individual models on the Exploration tab before drawing conclusions."
   }
 ]

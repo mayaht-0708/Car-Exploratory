@@ -1,1 +1,1 @@
-Sitemap: https://mayaht-0708.github.io/milestone-5/sitemap.xml
+Sitemap: https://mayaht-0708.github.io/Car-Exploratory/sitemap.xml

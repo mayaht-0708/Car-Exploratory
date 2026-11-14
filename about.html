@@ -75,7 +75,6 @@ ul.task-list li input[type="checkbox"] {
 }</script>
 
 
-<link rel="stylesheet" href="styles.css">
 </head>
 
 <body class="nav-fixed fullcontent quarto-light">
@@ -100,12 +99,12 @@ ul.task-list li input[type="checkbox"] {
 <span class="menu-text">Home</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="./project.html"> 
-<span class="menu-text">Exploration</span></a>
+    <a class="nav-link" href="./explorations.html"> 
+<span class="menu-text">Explorations</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="./story.html"> 
-<span class="menu-text">Story</span></a>
+    <a class="nav-link" href="./stories.html"> 
+<span class="menu-text">Stories</span></a>
   </li>  
   <li class="nav-item">
     <a class="nav-link active" href="./about.html" aria-current="page"> 
@@ -129,6 +128,7 @@ ul.task-list li input[type="checkbox"] {
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
 <h1 class="title">About the Data</h1>
+<p class="subtitle lead">The source and variables behind the car comparisons</p>
 </div>
 
 
@@ -146,47 +146,95 @@ ul.task-list li input[type="checkbox"] {
 
 
 <style>
-.data-section {
-  margin: 1.5rem 0;
-  padding: clamp(1.2rem, 3vw, 2rem);
+body {
+  background: linear-gradient(145deg, #f3f8ff 0%, #fbf7ff 55%, #f2fff8 100%);
+  color: #233047;
+}
+
+#quarto-content {
+  max-width: 1150px;
+  margin: 0 auto;
+}
+
+.quarto-title-block .title,
+h1, h2 {
+  color: #263b77;
+  font-weight: 800;
+}
+
+.cell {
+  margin: 1.5rem 0 2.5rem;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.9);
   border: 1px solid #e1e8f5;
   border-radius: 18px;
-  background: rgba(255, 255, 255, 0.92);
-  box-shadow: 0 10px 28px rgba(38, 59, 119, 0.07);
+  box-shadow: 0 10px 28px rgba(38, 59, 119, 0.09);
 }
 
-.data-section p,
-.data-section li {
-  line-height: 1.7;
+p {
+  line-height: 1.75;
 }
 </style>
-<p>This page documents the data behind the Home, Exploration, and Story pages.</p>
-<section id="data-source" class="level2 data-section">
-<h2 class="anchored" data-anchor-id="data-source">Data source</h2>
-<p>The site uses the <strong>Car Features and MSRP dataset</strong>, distributed as a CSV in this <a href="https://gist.github.com/dvinubius/33486dad2dc86319f0a06ffdb1d4f34f">GitHub Gist</a>. The original dataset contains <strong>11,914</strong> vehicle records.</p>
+<section id="dataset-and-source" class="level2">
+<h2 class="anchored" data-anchor-id="dataset-and-source">Dataset and source</h2>
+<p>The site reads a CSV file named <code>cars_msrp_kaggle.csv</code>, hosted in a <a href="https://gist.github.com/dvinubius/33486dad2dc86319f0a06ffdb1d4f34f">GitHub Gist by dvinubius</a>. The <a href="https://gist.githubusercontent.com/dvinubius/33486dad2dc86319f0a06ffdb1d4f34f/raw/">raw CSV</a> currently contains <strong>11,914 rows</strong> and <strong>16 columns</strong>. The project uses this hosted file; its original collection date and methodology are not documented here, so the prices should not be treated as current listings.</p>
 </section>
-<section id="variables-used" class="level2 data-section">
-<h2 class="anchored" data-anchor-id="variables-used">Variables used</h2>
-<ul>
-<li><strong>MSRP</strong> — manufacturer’s suggested retail price, in U.S. dollars</li>
-<li><strong>Engine HP</strong> — engine horsepower</li>
-<li><strong>Make</strong> and <strong>Model</strong> — vehicle manufacturer and model</li>
-<li><strong>Year</strong> — model year</li>
-<li><strong>city mpg</strong> and <strong>highway MPG</strong> — source-reported city and highway efficiency</li>
-<li><strong>Vehicle Size</strong> and <strong>Vehicle Style</strong> — the dataset’s size and body-style categories</li>
-</ul>
+<section id="variables-used-in-the-site" class="level2">
+<h2 class="anchored" data-anchor-id="variables-used-in-the-site">Variables used in the site</h2>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Dataset field</th>
+<th>How it is used</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>Make</code></td>
+<td>Vehicle manufacturer.</td>
+</tr>
+<tr class="even">
+<td><code>Model</code></td>
+<td>Vehicle identification and comparison.</td>
+</tr>
+<tr class="odd">
+<td><code>Year</code></td>
+<td>Model year.</td>
+</tr>
+<tr class="even">
+<td><code>MSRP</code></td>
+<td>Listed price, used to compare affordability.</td>
+</tr>
+<tr class="odd">
+<td><code>Engine HP</code></td>
+<td>Engine horsepower, used as the performance measure.</td>
+</tr>
+<tr class="even">
+<td><code>highway MPG</code></td>
+<td>Highway fuel economy for the MPG charts and balance score.</td>
+</tr>
+<tr class="odd">
+<td><code>Vehicle Size</code></td>
+<td>Color grouping in the scatterplots.</td>
+</tr>
+<tr class="even">
+<td><code>Vehicle Style</code></td>
+<td>Vehicle type used in the MPG group comparison.</td>
+</tr>
+</tbody>
+</table>
+<p>The source also includes fields such as city MPG, engine fuel type, transmission, drive type, and popularity. The current charts focus on the fields listed above.</p>
 </section>
-<section id="limitations" class="level2 data-section">
-<h2 class="anchored" data-anchor-id="limitations">Limitations</h2>
-<ul>
-<li>MSRP is a manufacturer’s suggested price, not necessarily the price someone pays. Prices are not adjusted for inflation across model years.</li>
-<li>MPG values for electric vehicles represent MPGe, not gasoline consumption.</li>
-<li>Horsepower is only one part of performance; the dataset does not measure acceleration, handling, reliability, repair costs, or actual ownership expenses.</li>
-<li>These records describe listed vehicle configurations. They are not sales-weighted, and category averages do not describe every vehicle in a category.</li>
-</ul>
-</section>
+<section id="analysis-notes" class="level2">
+<h2 class="anchored" data-anchor-id="analysis-notes">Analysis notes</h2>
+<p>The site uses the available fields to compare listed price, engine horsepower, highway fuel economy, vehicle size, and vehicle style. The balance score is a project-specific comparison that gives equal weight to price, horsepower, and highway fuel economy; it is not an official vehicle rating.</p>
 
 
+</section>
 
 </main> <!-- /main -->
 <script id="quarto-html-after-body" type="application/javascript">
@@ -262,7 +310,7 @@ ul.task-list li input[type="checkbox"] {
     }
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
       var mailtoRegex = new RegExp(/^mailto:/);
-        var filterRegex = new RegExp("https:\/\/mayaht-0708\.github\.io\/milestone-5\/");
+        var filterRegex = new RegExp("https:\/\/mayaht-0708\.github\.io\/Car-Exploratory\/");
       var isInternal = (href) => {
           return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
       }

@@ -1,0 +1,78 @@
+---
+title: "About the Data"
+subtitle: "The source and variables behind the car comparisons"
+format: html
+execute:
+  echo: false
+  message: false
+---
+
+<style>
+body {
+  background: linear-gradient(145deg, #f3f8ff 0%, #fbf7ff 55%, #f2fff8 100%);
+  color: #233047;
+}
+
+#quarto-content {
+  max-width: 1150px;
+  margin: 0 auto;
+}
+
+.quarto-title-block .title,
+h1, h2 {
+  color: #263b77;
+  font-weight: 800;
+}
+
+.cell {
+  margin: 1.5rem 0 2.5rem;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid #e1e8f5;
+  border-radius: 18px;
+  box-shadow: 0 10px 28px rgba(38, 59, 119, 0.09);
+}
+
+p {
+  line-height: 1.75;
+}
+</style>
+
+```{r}
+#| include: false
+data_url <- "https://gist.githubusercontent.com/dvinubius/33486dad2dc86319f0a06ffdb1d4f34f/raw/"
+cars <- readr::read_csv(data_url, show_col_types = FALSE)
+```
+
+## Dataset and source
+
+The site reads a CSV file named `cars_msrp_kaggle.csv`, hosted in a
+[GitHub Gist by dvinubius](https://gist.github.com/dvinubius/33486dad2dc86319f0a06ffdb1d4f34f).
+The [raw CSV](https://gist.githubusercontent.com/dvinubius/33486dad2dc86319f0a06ffdb1d4f34f/raw/)
+currently contains **`r format(nrow(cars), big.mark = ",")` rows** and
+**`r ncol(cars)` columns**. The project uses this hosted file; its original
+collection date and methodology are not documented here, so the prices should
+not be treated as current listings.
+
+## Variables used in the site
+
+| Dataset field | How it is used |
+|---|---|
+| `Make` | Vehicle manufacturer. |
+| `Model` | Vehicle identification and comparison. |
+| `Year` | Model year. |
+| `MSRP` | Listed price, used to compare affordability. |
+| `Engine HP` | Engine horsepower, used as the performance measure. |
+| `highway MPG` | Highway fuel economy for the MPG charts and balance score. |
+| `Vehicle Size` | Color grouping in the scatterplots. |
+| `Vehicle Style` | Vehicle type used in the MPG group comparison. |
+
+The source also includes fields such as city MPG, engine fuel type, transmission,
+drive type, and popularity. The current charts focus on the fields listed above.
+
+## Analysis notes
+
+The site uses the available fields to compare listed price, engine horsepower,
+highway fuel economy, vehicle size, and vehicle style. The balance score is a
+project-specific comparison that gives equal weight to price, horsepower, and
+highway fuel economy; it is not an official vehicle rating.

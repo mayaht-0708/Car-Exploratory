@@ -1,7 +1,6 @@
 ---
 title: "Car Stats Explorer"
 format: html
-author: Mayah Torres
 execute:
   echo: false
   message: false

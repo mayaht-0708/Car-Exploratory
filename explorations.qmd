@@ -1,0 +1,163 @@
+---
+title: "Explorations"
+subtitle: "Compare price, performance, and highway fuel economy"
+format: html
+execute:
+  echo: false
+  message: false
+---
+
+<style>
+body {
+  background: linear-gradient(145deg, #f3f8ff 0%, #fbf7ff 55%, #f2fff8 100%);
+  color: #233047;
+}
+
+#quarto-content {
+  max-width: 1150px;
+  margin: 0 auto;
+}
+
+.quarto-title-block .title,
+h1, h2 {
+  color: #263b77;
+  font-weight: 800;
+}
+
+.cell {
+  margin: 1.5rem 0 2.5rem;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid #e1e8f5;
+  border-radius: 18px;
+  box-shadow: 0 10px 28px rgba(38, 59, 119, 0.09);
+}
+
+p {
+  line-height: 1.75;
+}
+</style>
+
+Explore how price, horsepower, and highway fuel economy compare across vehicle
+types. Hover over points and bars for vehicle details.
+
+```{r}
+suppressPackageStartupMessages(library(tidyverse))
+suppressPackageStartupMessages(library(plotly))
+
+cars <- read_csv(
+  "https://gist.githubusercontent.com/dvinubius/33486dad2dc86319f0a06ffdb1d4f34f/raw/",
+  show_col_types = FALSE
+) |>
+  drop_na(
+    Make, Model, Year, MSRP, `Engine HP`, `highway MPG`,
+    `Vehicle Size`, `Vehicle Style`
+  ) |>
+  filter(MSRP > 0, `Engine HP` > 0, `highway MPG` > 0)
+
+car_rows <- cars |>
+  transmute(
+    Make,
+    Model,
+    Year,
+    price = MSRP,
+    horsepower = `Engine HP`,
+    highway_mpg = as.numeric(`highway MPG`),
+    vehicle_size = `Vehicle Size`,
+    vehicle_type = `Vehicle Style`,
+    hover_label = paste0(
+      "<b>", Make, " ", Model, " (", Year, ")</b>",
+      "<br>Price: ", scales::dollar(MSRP, accuracy = 1),
+      "<br>Horsepower: ", `Engine HP`, " hp",
+      "<br>Highway fuel economy: ", highway_mpg, " MPG",
+      "<br>Vehicle type: ", `Vehicle Style`,
+      "<br>Vehicle size: ", `Vehicle Size`
+    )
+  )
+```
+
+## Price vs. Horsepower
+
+```{r}
+plot_ly(
+  data = car_rows,
+  x = ~price,
+  y = ~horsepower,
+  color = ~vehicle_size,
+  colors = c("#2A9D8F", "#E76F51", "#457B9D"),
+  text = ~hover_label,
+  hoverinfo = "text",
+  type = "scatter",
+  mode = "markers",
+  marker = list(size = 7, opacity = 0.6)
+) |>
+  layout(
+    xaxis = list(title = "Price (MSRP)", tickformat = "$,.0f"),
+    yaxis = list(title = "Engine horsepower (hp)"),
+    legend = list(title = list(text = "Vehicle size")),
+    hovermode = "closest"
+  ) |>
+  config(displayModeBar = TRUE, displaylogo = FALSE)
+```
+
+## Horsepower vs. Highway MPG
+
+```{r}
+plot_ly(
+  data = car_rows,
+  x = ~highway_mpg,
+  y = ~horsepower,
+  color = ~vehicle_size,
+  colors = c("#2A9D8F", "#E76F51", "#457B9D"),
+  text = ~hover_label,
+  hoverinfo = "text",
+  type = "scatter",
+  mode = "markers",
+  marker = list(size = 7, opacity = 0.6)
+) |>
+  layout(
+    xaxis = list(title = "Highway fuel economy (MPG)"),
+    yaxis = list(title = "Engine horsepower (hp)"),
+    legend = list(title = list(text = "Vehicle size")),
+    hovermode = "closest"
+  ) |>
+  config(displayModeBar = TRUE, displaylogo = FALSE)
+```
+
+## Average Highway MPG by Vehicle Type
+
+```{r}
+mpg_by_type <- car_rows |>
+  group_by(vehicle_type) |>
+  summarise(
+    average_highway_mpg = mean(highway_mpg),
+    vehicles = n(),
+    .groups = "drop"
+  ) |>
+  arrange(average_highway_mpg) |>
+  mutate(
+    vehicle_type = factor(vehicle_type, levels = vehicle_type),
+    hover_label = paste0(
+      "<b>", vehicle_type, "</b>",
+      "<br>Average highway MPG: ", round(average_highway_mpg, 1),
+      "<br>Vehicles: ", vehicles
+    )
+  )
+
+plot_ly(
+  data = mpg_by_type,
+  x = ~average_highway_mpg,
+  y = ~vehicle_type,
+  text = ~hover_label,
+  hoverinfo = "text",
+  type = "bar",
+  orientation = "h",
+  marker = list(color = "#2A9D8F")
+) |>
+  layout(
+    xaxis = list(title = "Average highway fuel economy (MPG)"),
+    yaxis = list(title = "Vehicle type"),
+    margin = list(l = 150)
+  ) |>
+  config(displayModeBar = FALSE, displaylogo = FALSE)
+```

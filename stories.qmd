@@ -1,0 +1,248 @@
+---
+title: "Stories"
+subtitle: "What the dataset reveals about price, power, and fuel economy"
+format: html
+execute:
+  echo: false
+  message: false
+---
+
+<style>
+body {
+  background: linear-gradient(145deg, #f3f8ff 0%, #fbf7ff 55%, #f2fff8 100%);
+  color: #233047;
+}
+
+#quarto-content {
+  max-width: 1150px;
+  margin: 0 auto;
+}
+
+.quarto-title-block .title,
+h1, h2 {
+  color: #263b77;
+  font-weight: 800;
+}
+
+.cell {
+  margin: 1.5rem 0 2.5rem;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid #e1e8f5;
+  border-radius: 18px;
+  box-shadow: 0 10px 28px rgba(38, 59, 119, 0.09);
+}
+
+p {
+  line-height: 1.75;
+}
+</style>
+
+```{r}
+#| include: false
+suppressPackageStartupMessages(library(tidyverse))
+suppressPackageStartupMessages(library(plotly))
+suppressPackageStartupMessages(library(DT))
+
+cars <- read_csv(
+  "https://gist.githubusercontent.com/dvinubius/33486dad2dc86319f0a06ffdb1d4f34f/raw/",
+  show_col_types = FALSE
+) |>
+  drop_na(
+    Make, Model, Year, MSRP, `Engine HP`, `highway MPG`,
+    `Vehicle Size`, `Vehicle Style`
+  ) |>
+  filter(MSRP > 0, `Engine HP` > 0, `highway MPG` > 0) |>
+  mutate(
+    highway_mpg = as.numeric(`highway MPG`),
+    vehicle_size = `Vehicle Size`,
+    vehicle_type = `Vehicle Style`,
+    hover_label = paste0(
+      "<b>", Make, " ", Model, " (", Year, ")</b>",
+      "<br>Price: ", scales::dollar(MSRP, accuracy = 1),
+      "<br>Horsepower: ", `Engine HP`, " hp",
+      "<br>Highway fuel economy: ", highway_mpg, " MPG",
+      "<br>Vehicle type: ", vehicle_type
+    )
+  )
+
+price_power <- cars
+
+price_power_correlation <- cor(price_power$MSRP, price_power$`Engine HP`)
+power_fit <- lm(`Engine HP` ~ MSRP, data = price_power)
+trend_line <- tibble(
+  MSRP = seq(min(price_power$MSRP), max(price_power$MSRP), length.out = 100)
+) |>
+  mutate(predicted_hp = predict(power_fit, newdata = tibble(MSRP = MSRP)))
+
+mpg_by_type <- cars |>
+  group_by(vehicle_type) |>
+  summarise(
+    average_highway_mpg = mean(highway_mpg),
+    vehicles = n(),
+    .groups = "drop"
+  ) |>
+  arrange(average_highway_mpg) |>
+  mutate(
+    vehicle_type = factor(vehicle_type, levels = vehicle_type),
+    hover_label = paste0(
+      "<b>", vehicle_type, "</b>",
+      "<br>Average highway MPG: ", round(average_highway_mpg, 1),
+      "<br>Vehicles: ", vehicles
+    )
+  )
+
+best_mpg_type <- mpg_by_type |>
+  slice_max(average_highway_mpg, n = 1, with_ties = FALSE)
+
+balance_cars <- cars |>
+  mutate(
+    affordability_rank = 1 - percent_rank(MSRP),
+    performance_rank = percent_rank(`Engine HP`),
+    efficiency_rank = percent_rank(highway_mpg),
+    balance_score = (
+      affordability_rank + performance_rank + efficiency_rank
+    ) / 3
+  ) |>
+  arrange(desc(balance_score), MSRP, desc(`Engine HP`), desc(highway_mpg))
+
+top_balance <- balance_cars |>
+  slice_head(n = 10) |>
+  mutate(
+    hover_label = paste0(
+      "<b>", Make, " ", Model, " (", Year, ")</b>",
+      "<br>Price: ", scales::dollar(MSRP, accuracy = 1),
+      "<br>Horsepower: ", `Engine HP`, " hp",
+      "<br>Highway fuel economy: ", highway_mpg, " MPG",
+      "<br>Balance score: ", round(balance_score, 3)
+    )
+  )
+
+association_direction <- case_when(
+  price_power_correlation > 0 ~ "positive",
+  price_power_correlation < 0 ~ "negative",
+  TRUE ~ "near zero"
+)
+```
+
+## Are more expensive cars more powerful?
+
+Across the `r format(nrow(price_power), big.mark = ",")` complete records, the
+Pearson correlation between MSRP and horsepower is
+**`r round(price_power_correlation, 2)`**. That is a
+`r association_direction` association in this dataset, not a rule for every
+vehicle and not evidence that price causes horsepower.
+
+```{r}
+plot_ly(
+  data = price_power,
+  x = ~MSRP,
+  y = ~`Engine HP`,
+  color = ~vehicle_size,
+  colors = c("#2A9D8F", "#E76F51", "#457B9D"),
+  text = ~hover_label,
+  hoverinfo = "text",
+  type = "scatter",
+  mode = "markers",
+  marker = list(size = 7, opacity = 0.55)
+) |>
+  add_lines(
+    data = trend_line,
+    x = ~MSRP,
+    y = ~predicted_hp,
+    inherit = FALSE,
+    name = "Linear trend",
+    hoverinfo = "skip",
+    line = list(color = "#263b77", width = 3)
+  ) |>
+  layout(
+    xaxis = list(title = "Price (MSRP)", tickformat = "$,.0f"),
+    yaxis = list(title = "Engine horsepower (hp)"),
+    legend = list(title = list(text = "Vehicle size")),
+    hovermode = "closest"
+  ) |>
+  config(displayModeBar = TRUE, displaylogo = FALSE)
+```
+
+## Which vehicle types get the best highway gas mileage?
+
+Among the complete records, **`r as.character(best_mpg_type$vehicle_type[[1]])`**
+has the highest average at **`r round(best_mpg_type$average_highway_mpg[[1]], 1)` MPG**
+(`r format(best_mpg_type$vehicles[[1]], big.mark = ",")` records). These are
+unadjusted averages, so vehicle age and other characteristics are not held
+constant.
+
+```{r}
+plot_ly(
+  data = mpg_by_type,
+  x = ~average_highway_mpg,
+  y = ~vehicle_type,
+  text = ~hover_label,
+  hoverinfo = "text",
+  type = "bar",
+  orientation = "h",
+  marker = list(color = "#2A9D8F")
+) |>
+  layout(
+    xaxis = list(title = "Average highway fuel economy (MPG)"),
+    yaxis = list(title = "Vehicle type"),
+    margin = list(l = 150)
+  ) |>
+  config(displayModeBar = FALSE, displaylogo = FALSE)
+```
+
+## Which cars balance price, power, and fuel economy?
+
+To make “balance” explicit, each complete record gets an equal-weight score:
+the average of its percentile ranks for affordability (lower price ranks
+higher), horsepower (higher ranks higher), and highway MPG (higher ranks
+higher). These are the top-ranked records in this dataset by that definition,
+not a universal best-car ranking.
+
+```{r}
+top_balance |>
+  transmute(
+    Year,
+    Make,
+    Model,
+    MSRP,
+    Horsepower = `Engine HP`,
+    Highway_MPG = highway_mpg,
+    Balance_score = balance_score
+  ) |>
+  DT::datatable(
+    rownames = FALSE,
+    colnames = c(
+      "Year", "Manufacturer", "Model", "Price (MSRP)",
+      "Horsepower (hp)", "Highway MPG", "Balance score"
+    ),
+    options = list(dom = "tip", pageLength = 10, scrollX = TRUE)
+  ) |>
+  DT::formatCurrency("MSRP", "$", digits = 0) |>
+  DT::formatRound("Horsepower", 0) |>
+  DT::formatRound("Highway_MPG", 0) |>
+  DT::formatRound("Balance_score", 3)
+```
+
+```{r}
+plot_ly(
+  data = top_balance,
+  x = ~MSRP,
+  y = ~highway_mpg,
+  size = ~`Engine HP`,
+  color = ~balance_score,
+  colors = c("#E76F51", "#F4A261", "#2A9D8F"),
+  text = ~hover_label,
+  hoverinfo = "text",
+  type = "scatter",
+  mode = "markers",
+  marker = list(opacity = 0.85)
+) |>
+  layout(
+    xaxis = list(title = "Price (MSRP)", tickformat = "$,.0f"),
+    yaxis = list(title = "Highway fuel economy (MPG)"),
+    colorbar = list(title = "Balance score"),
+    hovermode = "closest"
+  ) |>
+  config(displayModeBar = TRUE, displaylogo = FALSE)
+```

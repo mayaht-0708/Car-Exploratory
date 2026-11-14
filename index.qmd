@@ -2,51 +2,77 @@
 title: "Car Stats Explorer"
 ---
 
-## Car Price vs. Horsepower
+Find vehicles by manufacturer, model year, and vehicle type, then compare price,
+engine horsepower, and highway fuel economy in the table.
+
+## Find and compare cars
 
 ```{r}
-#| echo: false
 suppressPackageStartupMessages(library(tidyverse))
-suppressPackageStartupMessages(library(plotly))
+suppressPackageStartupMessages(library(crosstalk))
+suppressPackageStartupMessages(library(DT))
 
 cars <- read_csv(
   "https://gist.githubusercontent.com/dvinubius/33486dad2dc86319f0a06ffdb1d4f34f/raw/",
   show_col_types = FALSE
-)
-
-plot_cars <- cars |>
-  filter(
-    !is.na(MSRP), MSRP > 0,
-    !is.na(`Engine HP`), `Engine HP` > 0,
-    !is.na(`Vehicle Size`)
+) |>
+  drop_na(
+    Make, Model, Year, MSRP, `Engine HP`, `highway MPG`,
+    `Vehicle Size`, `Vehicle Style`
   ) |>
-  mutate(
-    hover_label = paste0(
-      "<b>", Make, " ", Model, " (", Year, ")</b>",
-      "<br>Price: ", scales::dollar(MSRP, accuracy = 1),
-      "<br>Horsepower: ", `Engine HP`, " hp",
-      "<br>Vehicle size: ", `Vehicle Size`,
-      "<br>Style: ", `Vehicle Style`
-    )
+  filter(MSRP > 0, `Engine HP` > 0, `highway MPG` > 0)
+
+car_rows <- cars |>
+  transmute(
+    car_id = row_number(),
+    Make,
+    Model,
+    Year,
+    price = MSRP,
+    horsepower = `Engine HP`,
+    highway_mpg = as.numeric(`highway MPG`),
+    vehicle_type = `Vehicle Style`,
+    vehicle_size = `Vehicle Size`
   )
 
-plot_ly(
-  data = plot_cars,
-  x = ~MSRP,
-  y = ~`Engine HP`,
-  color = ~`Vehicle Size`,
-  colors = c("#2A9D8F", "#E76F51", "#457B9D"),
-  text = ~hover_label,
-  hoverinfo = "text",
-  type = "scatter",
-  mode = "markers",
-  marker = list(size = 7, opacity = 0.6)
+shared_cars <- SharedData$new(
+  car_rows,
+  key = ~car_id,
+  group = "home-car-comparison"
+)
+
+bscols(
+  widths = c(4, 4, 4),
+  filter_select("manufacturer", "Manufacturer", shared_cars, ~Make, multiple = TRUE),
+  filter_slider("model_year", "Model year", shared_cars, ~Year, step = 1),
+  filter_select(
+    "vehicle_type",
+    "Vehicle type",
+    shared_cars,
+    ~vehicle_type,
+    multiple = TRUE
+  )
+)
+```
+
+## Compare cars
+
+Sort the table by price, horsepower, or highway MPG to compare specific vehicles.
+
+```{r}
+DT::datatable(
+  shared_cars,
+  rownames = FALSE,
+  colnames = c(
+    "Row", "Manufacturer", "Model", "Year", "Price (MSRP)",
+    "Horsepower (hp)", "Highway MPG", "Vehicle type", "Vehicle size"
+  ),
+  options = list(
+    dom = "tip",
+    pageLength = 10,
+    scrollX = TRUE,
+    columnDefs = list(list(visible = FALSE, targets = 0))
+  )
 ) |>
-  layout(
-    xaxis = list(title = "Price (MSRP)", tickformat = "$,.0f"),
-    yaxis = list(title = "Engine horsepower (hp)"),
-    legend = list(title = list(text = "Vehicle size")),
-    hovermode = "closest"
-  ) |>
-  config(displayModeBar = TRUE, displaylogo = FALSE)
+  DT::formatCurrency("price", "$", digits = 0)
 ```

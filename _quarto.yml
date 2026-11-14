@@ -2,6 +2,9 @@ project:
   type: website
   output-dir: _site
 
+execute:
+  echo: false
+
 website:
   title: "Car Stats Explorer"
   navbar:
@@ -9,3 +12,9 @@ website:
     left:
       - text: Home
         href: index.qmd
+      - text: Explorations
+        href: explorations.qmd
+      - text: Stories
+        href: stories.qmd
+      - text: About the Data
+        href: about.qmd

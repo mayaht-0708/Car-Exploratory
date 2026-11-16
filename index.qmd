@@ -1,78 +1,613 @@
 ---
 title: "Car Stats Explorer"
+execute:
+  echo: false
+  message: false
 ---
 
-Find vehicles by manufacturer, model year, and vehicle type, then compare price,
-engine horsepower, and highway fuel economy in the table.
+<style>
+body {
+  background: linear-gradient(145deg, #f3f8ff 0%, #fbf7ff 55%, #f2fff8 100%);
+  color: #233047;
+}
 
-## Find and compare cars
+#quarto-content {
+  max-width: 1150px;
+  margin: 0 auto;
+}
+
+.quarto-title-block .title,
+h1, h2 {
+  color: #263b77;
+  font-weight: 800;
+}
+
+.cell {
+  margin: 1.5rem 0 2.5rem;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid #e1e8f5;
+  border-radius: 18px;
+  box-shadow: 0 10px 28px rgba(38, 59, 119, 0.09);
+}
+
+p {
+  line-height: 1.75;
+}
+
+.epa-dashboard {
+  max-width: 100%;
+  margin: 1.75rem 0 2.25rem;
+  padding: 1.5rem;
+  background: #fff;
+  border: 1px solid #d5e4f2;
+  border-radius: 18px;
+  box-shadow: 0 10px 28px rgba(38, 59, 119, 0.09);
+  overflow-x: clip;
+}
+
+.epa-dashboard-toolbar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.9rem;
+  margin-bottom: 1.5rem;
+}
+
+.epa-view-toggle {
+  display: inline-flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.epa-dashboard button {
+  min-height: 42px;
+  padding: 0.55rem 0.9rem;
+  color: #263b77;
+  background: #f3f8ff;
+  border: 1px solid #cbd9ed;
+  border-radius: 999px;
+  font: inherit;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.epa-dashboard button.active {
+  color: #fff;
+  background: #263b77;
+  border-color: #263b77;
+}
+
+.epa-dashboard button:not(.epa-legend-item):not(.active):hover {
+  color: #263b77;
+  background: #e9f1fb;
+  border-color: #91a6c8;
+}
+
+.epa-dashboard button:focus-visible {
+  outline: 3px solid rgba(42, 157, 143, 0.45);
+  outline-offset: 2px;
+}
+
+.epa-year-filter {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  color: #34445f;
+  font-size: 0.9rem;
+}
+
+.epa-year-filter input {
+  width: min(180px, 30vw);
+  accent-color: #2a9d8f;
+}
+
+.epa-dashboard-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 240px;
+  gap: 1.25rem;
+  align-items: stretch;
+}
+
+.epa-measure-menu {
+  width: 100%;
+  display: flex;
+  flex-wrap: nowrap;
+  justify-content: center;
+  gap: 0.45rem;
+  padding: 0.15rem 0;
+}
+
+.epa-measure-menu button {
+  min-width: 0;
+  min-height: 46px;
+  flex: 1 1 0;
+  padding: 0.55rem 0.65rem;
+  text-align: center;
+  white-space: nowrap;
+  border-radius: 11px;
+}
+
+.epa-chart-panel {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.epa-chart-panel .plotly.html-widget {
+  width: 100% !important;
+  max-width: 100%;
+}
+
+.epa-legend-panel {
+  min-width: 0;
+  padding: 0.75rem;
+  background: #f7faff;
+  border: 1px solid #e1e8f5;
+  border-radius: 12px;
+}
+
+.epa-legend-title {
+  margin: 0 0 0.65rem;
+  color: #263b77;
+  font-size: 0.95rem;
+  font-weight: 750;
+}
+
+.epa-legend-items {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.epa-dashboard .epa-legend-item {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.16rem 0.3rem;
+  color: #34445f;
+  background: transparent;
+  border: 0;
+  border-radius: 7px;
+  font-size: 0.76rem;
+  font-weight: 500;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.epa-dashboard .epa-legend-item:hover {
+  color: #263b77;
+  background: #e9f1fb;
+}
+
+.epa-legend-swatch {
+  width: 0.65rem;
+  height: 0.65rem;
+  flex: 0 0 0.65rem;
+  border-radius: 50%;
+}
+
+.epa-data-note {
+  margin: 0.75rem 0 0;
+  color: #56657a;
+  font-size: 0.9rem;
+}
+
+@media (max-width: 900px) {
+  .epa-dashboard-body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .epa-legend-panel {
+    grid-column: 1;
+  }
+}
+
+@media (max-width: 800px) {
+  .epa-measure-menu {
+    flex-wrap: wrap;
+  }
+
+  .epa-measure-menu button {
+    flex: 1 1 130px;
+  }
+}
+
+@media (max-width: 600px) {
+  .epa-dashboard {
+    padding: 0.85rem;
+  }
+
+  .epa-year-filter {
+    width: 100%;
+  }
+
+  .epa-year-filter input {
+    flex: 1 1 110px;
+    max-width: 180px;
+  }
+
+  .epa-dashboard-body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .epa-legend-panel {
+    padding: 0.55rem;
+  }
+}
+</style>
+
+## Automotive Trends: Interactive Explorer
+
+Explore yearly averages by vehicle type or manufacturer. Choose a measurement
+below the year range and hover over a line to see the year, group, average,
+and number of records.
 
 ```{r}
 suppressPackageStartupMessages(library(tidyverse))
-suppressPackageStartupMessages(library(crosstalk))
-suppressPackageStartupMessages(library(DT))
+suppressPackageStartupMessages(library(plotly))
 
-cars <- read_csv(
-  "https://gist.githubusercontent.com/dvinubius/33486dad2dc86319f0a06ffdb1d4f34f/raw/",
+measure_labels <- c(
+  highway_mpg = "Highway MPG",
+  city_mpg = "City MPG",
+  horsepower = "Engine horsepower",
+  msrp = "MSRP",
+  cylinders = "Engine cylinders"
+)
+
+measure_units <- c(
+  highway_mpg = "MPG",
+  city_mpg = "MPG",
+  horsepower = "hp",
+  msrp = "USD",
+  cylinders = "cylinders"
+)
+
+epa_cars <- read_csv(
+  "data/cars_msrp_kaggle.csv",
   show_col_types = FALSE
 ) |>
-  drop_na(
-    Make, Model, Year, MSRP, `Engine HP`, `highway MPG`,
-    `Vehicle Size`, `Vehicle Style`
-  ) |>
-  filter(MSRP > 0, `Engine HP` > 0, `highway MPG` > 0)
-
-car_rows <- cars |>
   transmute(
-    car_id = row_number(),
-    Make,
-    Model,
-    Year,
-    price = MSRP,
-    horsepower = `Engine HP`,
-    highway_mpg = as.numeric(`highway MPG`),
-    vehicle_type = `Vehicle Style`,
-    vehicle_size = `Vehicle Size`
+    Make = str_trim(Make),
+    Model = str_trim(Model),
+    Year = parse_integer(as.character(Year)),
+    vehicle_type = str_trim(`Vehicle Style`),
+    highway_mpg = parse_number(as.character(`highway MPG`)),
+    city_mpg = parse_number(as.character(`city mpg`)),
+    horsepower = parse_number(as.character(`Engine HP`)),
+    msrp = parse_number(as.character(MSRP)),
+    cylinders = parse_number(as.character(`Engine Cylinders`))
+  ) |>
+  filter(
+    !is.na(Year),
+    !is.na(Make), Make != "",
+    !is.na(vehicle_type), vehicle_type != ""
   )
 
-shared_cars <- SharedData$new(
-  car_rows,
-  key = ~car_id,
-  group = "home-car-comparison"
+epa_long <- epa_cars |>
+  pivot_longer(
+    cols = all_of(names(measure_labels)),
+    names_to = "measure",
+    values_to = "value"
+  ) |>
+  filter(!is.na(value), is.finite(value), value > 0) |>
+  mutate(
+    measure_label = unname(measure_labels[measure]),
+    unit = unname(measure_units[measure])
+  )
+
+summarise_epa_trends <- \(group_column, view_name) {
+  epa_long |>
+    mutate(series = .data[[group_column]]) |>
+    group_by(view = view_name, series, Year, measure, measure_label, unit) |>
+    summarise(
+      average = mean(value),
+      records = n(),
+      example_models = paste(head(sort(unique(Model)), 3), collapse = ", "),
+      .groups = "drop"
+    ) |>
+    mutate(
+      formatted_average = if_else(
+        unit == "USD",
+        paste0("$", format(average, big.mark = ",", digits = 10, trim = TRUE)),
+        paste0(format(average, digits = 10, trim = TRUE), " ", unit)
+      ),
+      hover_label = paste0(
+        "<b>", htmltools::htmlEscape(series), "</b>",
+        "<br>Model year: ", Year,
+        "<br>", measure_label, ": ", formatted_average,
+        "<br>Records in average: ", records,
+        "<br>Example models: ", htmltools::htmlEscape(example_models)
+      )
+    )
+}
+
+epa_trends <- bind_rows(
+  summarise_epa_trends("vehicle_type", "Vehicle Type"),
+  summarise_epa_trends("Make", "Manufacturer")
 )
 
-bscols(
-  widths = c(4, 4, 4),
-  filter_select("manufacturer", "Manufacturer", shared_cars, ~Make, multiple = TRUE),
-  filter_slider("model_year", "Model year", shared_cars, ~Year, step = 1),
-  filter_select(
-    "vehicle_type",
-    "Vehicle type",
-    shared_cars,
-    ~vehicle_type,
-    multiple = TRUE
+available_years <- range(epa_trends$Year, na.rm = TRUE)
+series_names <- sort(unique(epa_trends$series))
+series_colors <- setNames(
+  grDevices::hcl.colors(length(series_names), palette = "Dynamic"),
+  series_names
+)
+view_options <- c("Vehicle Type", "Manufacturer")
+initial_measure <- names(measure_labels)[[1]]
+
+epa_plot <- plot_ly(height = 560)
+for (view_name in view_options) {
+  for (measure_name in names(measure_labels)) {
+    measure_rows <- epa_trends |>
+      filter(view == view_name, measure == measure_name)
+
+    for (series_name in sort(unique(measure_rows$series))) {
+      series_rows <- measure_rows |>
+        filter(series == series_name) |>
+        arrange(Year)
+      is_initial <- view_name == view_options[[1]] &&
+        measure_name == initial_measure
+
+      epa_plot <- epa_plot |>
+        add_trace(
+          data = series_rows,
+          x = ~Year,
+          y = ~average,
+          text = ~hover_label,
+          type = "scatter",
+          mode = "lines+markers",
+          name = series_name,
+          legendgroup = series_name,
+          visible = is_initial,
+          meta = list(view = view_name, measure = measure_name),
+          line = list(color = unname(series_colors[[series_name]]), width = 2),
+          marker = list(size = 4),
+          showlegend = FALSE,
+          hovertemplate = "%{text}<extra></extra>"
+        )
+    }
+  }
+}
+
+epa_plot <- epa_plot |>
+  layout(
+    autosize = TRUE,
+    height = 560,
+    margin = list(l = 68, r = 15, t = 72, b = 60),
+    title = list(
+      text = "Automotive Trends by Model Year",
+      x = 0.5,
+      xanchor = "center",
+      font = list(size = 21, color = "#263b77")
+    ),
+    xaxis = list(
+      title = "Model year",
+      range = available_years,
+      dtick = 2,
+      fixedrange = FALSE,
+      gridcolor = "#e8eef6",
+      zeroline = FALSE
+    ),
+    yaxis = list(
+      title = paste0(unname(measure_labels[[initial_measure]]), " (MPG)"),
+      rangemode = "tozero",
+      gridcolor = "#e8eef6",
+      zeroline = FALSE
+    ),
+    hovermode = "closest",
+    font = list(
+      family = "system-ui, -apple-system, Segoe UI, sans-serif",
+      size = 12,
+      color = "#34445f"
+    ),
+    plot_bgcolor = "rgba(255,255,255,0)",
+    paper_bgcolor = "rgba(255,255,255,0)"
+  ) |>
+  config(
+    responsive = TRUE,
+    displayModeBar = FALSE,
+    displaylogo = FALSE,
+    scrollZoom = FALSE
+  )
+
+epa_plot <- htmlwidgets::onRender(
+  epa_plot,
+  "
+  function(el, x) {
+    var dashboard = el.closest('.epa-dashboard');
+    var viewButtons = dashboard.querySelectorAll('[data-epa-view]');
+    var measureButtons = dashboard.querySelectorAll('[data-epa-measure]');
+    var legendTitle = dashboard.querySelector('#epa-legend-title');
+    var legendItems = dashboard.querySelector('#epa-legend-items');
+    var startYear = dashboard.querySelector('#epa-year-start');
+    var endYear = dashboard.querySelector('#epa-year-end');
+    var yearLabel = dashboard.querySelector('#epa-year-label');
+    var view = 'Vehicle Type';
+    var measure = 'highway_mpg';
+    var seriesVisibility = {};
+    var measureTitles = {
+      highway_mpg: 'Highway MPG',
+      city_mpg: 'City MPG',
+      horsepower: 'Engine horsepower (hp)',
+      msrp: 'MSRP (USD)',
+      cylinders: 'Engine cylinders'
+    };
+
+    function updateChart() {
+      if (Number(startYear.value) > Number(endYear.value)) {
+        if (document.activeElement === startYear) {
+          endYear.value = startYear.value;
+        } else {
+          startYear.value = endYear.value;
+        }
+      }
+
+      var firstYear = Number(startYear.value);
+      var lastYear = Number(endYear.value);
+      var traceIndexes = el.data.map(function(_, index) { return index; });
+      var visibility = el.data.map(function(trace) {
+        return trace.meta.view === view &&
+          trace.meta.measure === measure &&
+          seriesVisibility[trace.name] !== false;
+      });
+
+      Plotly.restyle(el, {visible: visibility}, traceIndexes);
+      Plotly.relayout(el, {
+        'xaxis.range': [firstYear, lastYear],
+        'yaxis.title.text': measureTitles[measure],
+      });
+
+      yearLabel.textContent = firstYear + ' - ' + lastYear;
+      legendTitle.textContent = view;
+      legendItems.replaceChildren();
+
+      var activeSeries = {};
+      el.data.forEach(function(trace) {
+        if (trace.meta.view === view && trace.meta.measure === measure) {
+          activeSeries[trace.name] = trace.line.color;
+        }
+      });
+
+      Object.keys(activeSeries).sort().forEach(function(seriesName) {
+        var item = document.createElement('button');
+        var swatch = document.createElement('span');
+        var label = document.createElement('span');
+        var isVisible = seriesVisibility[seriesName] !== false;
+
+        item.type = 'button';
+        item.className = 'epa-legend-item';
+        item.setAttribute('aria-pressed', String(isVisible));
+        item.setAttribute('aria-label', 'Toggle ' + seriesName);
+        swatch.className = 'epa-legend-swatch';
+        swatch.style.backgroundColor = activeSeries[seriesName];
+        label.textContent = seriesName;
+        item.append(swatch, label);
+        item.addEventListener('click', function() {
+          seriesVisibility[seriesName] = !isVisible;
+          updateChart();
+        });
+        legendItems.appendChild(item);
+      });
+
+      viewButtons.forEach(function(button) {
+        button.classList.toggle('active', button.dataset.epaView === view);
+      });
+      measureButtons.forEach(function(button) {
+        button.classList.toggle(
+          'active',
+          button.dataset.epaMeasure === measure
+        );
+      });
+    }
+
+    viewButtons.forEach(function(button) {
+      button.addEventListener('click', function() {
+        view = button.dataset.epaView;
+        updateChart();
+      });
+    });
+    measureButtons.forEach(function(button) {
+      button.addEventListener('click', function() {
+        measure = button.dataset.epaMeasure;
+        updateChart();
+      });
+    });
+    startYear.addEventListener('input', updateChart);
+    endYear.addEventListener('input', updateChart);
+    updateChart();
+  }
+  "
+)
+
+htmltools::tagList(
+  htmltools::tags$div(
+    class = "epa-dashboard",
+    htmltools::tags$div(
+      class = "epa-dashboard-toolbar",
+      htmltools::tags$div(
+        class = "epa-view-toggle",
+        htmltools::tags$button(
+          type = "button",
+          class = "active",
+          `data-epa-view` = "Vehicle Type",
+          "View by Vehicle Type"
+        ),
+        htmltools::tags$button(
+          type = "button",
+          `data-epa-view` = "Manufacturer",
+          "View by Manufacturer"
+        )
+      ),
+      htmltools::tags$div(
+        class = "epa-year-filter",
+        htmltools::tags$label(`for` = "epa-year-start", "Year range"),
+        htmltools::tags$input(
+          type = "range",
+          id = "epa-year-start",
+          min = available_years[[1]],
+          max = available_years[[2]],
+          value = available_years[[1]],
+          step = 1
+        ),
+        htmltools::tags$input(
+          type = "range",
+          id = "epa-year-end",
+          min = available_years[[1]],
+          max = available_years[[2]],
+          value = available_years[[2]],
+          step = 1
+        ),
+        htmltools::tags$span(
+          id = "epa-year-label",
+          paste(available_years, collapse = " - ")
+        )
+      ),
+      htmltools::tags$aside(
+        class = "epa-measure-menu",
+        role = "group",
+        `aria-label` = "Select measurement",
+        lapply(names(measure_labels), \(measure_name) {
+          htmltools::tags$button(
+            type = "button",
+            class = if (measure_name == initial_measure) "active" else NULL,
+            `data-epa-measure` = measure_name,
+            unname(measure_labels[[measure_name]])
+          )
+        })
+      )
+    ),
+    htmltools::tags$div(
+      class = "epa-dashboard-body",
+      htmltools::tags$div(class = "epa-chart-panel", epa_plot),
+      htmltools::tags$aside(
+        class = "epa-legend-panel",
+        htmltools::tags$h3(
+          id = "epa-legend-title",
+          class = "epa-legend-title",
+          "Vehicle Type"
+        ),
+        htmltools::tags$div(
+          id = "epa-legend-items",
+          class = "epa-legend-items",
+          role = "group",
+          `aria-label` = "Toggle chart series"
+        )
+      )
+    ),
+    htmltools::tags$p(
+      class = "epa-data-note",
+      paste0(
+        "Data coverage: ", available_years[[1]], " - ", available_years[[2]],
+        ". MPG, horsepower, MSRP, and cylinder values are averages from the ",
+        "local dataset, not EPA-certified ratings. Production share, weight, ",
+        "and footprint are not present in this CSV."
+      )
+    )
   )
 )
-```
-
-## Compare cars
-
-Sort the table by price, horsepower, or highway MPG to compare specific vehicles.
-
-```{r}
-DT::datatable(
-  shared_cars,
-  rownames = FALSE,
-  colnames = c(
-    "Row", "Manufacturer", "Model", "Year", "Price (MSRP)",
-    "Horsepower (hp)", "Highway MPG", "Vehicle type", "Vehicle size"
-  ),
-  options = list(
-    dom = "tip",
-    pageLength = 10,
-    scrollX = TRUE,
-    columnDefs = list(list(visible = FALSE, targets = 0))
-  )
-) |>
-  DT::formatCurrency("price", "$", digits = 0)
 ```

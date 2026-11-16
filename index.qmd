@@ -241,123 +241,152 @@ p {
 }
 </style>
 
-## Automotive Trends: Interactive Explorer
+## EPA Automotive Trends
 
-Explore yearly averages by vehicle type or manufacturer. Choose a measurement
-below the year range and hover over a line to see the year, group, average,
-and number of records.
+Explore EPA-reported annual trends by vehicle type or regulatory class. Select
+a measure and year range; hover over observed values for the exact year,
+category, and measurement.
 
 ```{r}
 suppressPackageStartupMessages(library(tidyverse))
 suppressPackageStartupMessages(library(plotly))
 
 measure_labels <- c(
-  highway_mpg = "Highway MPG",
-  city_mpg = "City MPG",
-  horsepower = "Engine horsepower",
-  msrp = "MSRP",
-  cylinders = "Engine cylinders"
+  real_world_mpg = "Real-World MPG",
+  production_share = "Production Share",
+  horsepower = "Horsepower",
+  weight = "Weight",
+  footprint = "Footprint"
 )
 
 measure_units <- c(
-  highway_mpg = "MPG",
-  city_mpg = "MPG",
-  horsepower = "hp",
-  msrp = "USD",
-  cylinders = "cylinders"
+  real_world_mpg = "MPG",
+  production_share = "%",
+  horsepower = "HP",
+  weight = "lbs",
+  footprint = "sq. ft."
 )
 
-epa_cars <- read_csv(
-  "data/cars_msrp_kaggle.csv",
+epa_raw <- read_csv(
+  "data/table_export.csv",
+  col_types = cols(.default = col_character()),
+  na = c("", "-", "NA"),
   show_col_types = FALSE
 ) |>
   transmute(
-    Make = str_trim(Make),
-    Model = str_trim(Model),
-    Year = parse_integer(as.character(Year)),
-    vehicle_type = str_trim(`Vehicle Style`),
-    highway_mpg = parse_number(as.character(`highway MPG`)),
-    city_mpg = parse_number(as.character(`city mpg`)),
-    horsepower = parse_number(as.character(`Engine HP`)),
-    msrp = parse_number(as.character(MSRP)),
-    cylinders = parse_number(as.character(`Engine Cylinders`))
+    model_year = as.integer(parse_number(str_extract(`Model Year`, "\\d{4}"))),
+    preliminary = str_detect(`Model Year`, regex("prelim", ignore_case = TRUE)),
+    regulatory_class = str_trim(`Regulatory Class`),
+    vehicle_type = str_trim(`Vehicle Type`),
+    real_world_mpg = parse_number(`Real-World MPG`),
+    production_share = parse_number(`Production Share`),
+    horsepower = parse_number(`Horsepower (HP)`),
+    weight = parse_number(`Weight (lbs)`),
+    footprint = parse_number(`Footprint (sq. ft.)`)
   ) |>
   filter(
-    !is.na(Year),
-    !is.na(Make), Make != "",
+    !is.na(model_year),
+    !is.na(regulatory_class), regulatory_class != "",
     !is.na(vehicle_type), vehicle_type != ""
   )
 
-epa_long <- epa_cars |>
+epa_long <- epa_raw |>
   pivot_longer(
     cols = all_of(names(measure_labels)),
     names_to = "measure",
     values_to = "value"
   ) |>
-  filter(!is.na(value), is.finite(value), value > 0) |>
   mutate(
     measure_label = unname(measure_labels[measure]),
-    unit = unname(measure_units[measure])
+    unit = unname(measure_units[measure]),
+    value = if_else(
+      measure == "production_share",
+      value * 100,
+      value
+    ),
+    formatted_value = if_else(
+      measure == "production_share",
+      paste0(format(value, digits = 10, trim = TRUE), "%"),
+      paste(format(value, digits = 10, trim = TRUE), unit)
+    ),
+    model_year_label = if_else(
+      preliminary,
+      paste0(model_year, " (Preliminary)"),
+      as.character(model_year)
+    )
   )
 
-summarise_epa_trends <- \(group_column, view_name) {
+epa_chart_data <- bind_rows(
   epa_long |>
-    mutate(series = .data[[group_column]]) |>
-    group_by(view = view_name, series, Year, measure, measure_label, unit) |>
-    summarise(
-      average = mean(value),
-      records = n(),
-      example_models = paste(head(sort(unique(Model)), 3), collapse = ", "),
-      .groups = "drop"
-    ) |>
-    mutate(
-      formatted_average = if_else(
-        unit == "USD",
-        paste0("$", format(average, big.mark = ",", digits = 10, trim = TRUE)),
-        paste0(format(average, digits = 10, trim = TRUE), " ", unit)
-      ),
-      hover_label = paste0(
-        "<b>", htmltools::htmlEscape(series), "</b>",
-        "<br>Model year: ", Year,
-        "<br>", measure_label, ": ", formatted_average,
-        "<br>Records in average: ", records,
-        "<br>Example models: ", htmltools::htmlEscape(example_models)
-      )
+    transmute(
+      view = "Vehicle Type",
+      series = vehicle_type,
+      model_year,
+      measure,
+      measure_label,
+      unit,
+      value,
+      formatted_value,
+      model_year_label
+    ),
+  epa_long |>
+    filter(vehicle_type %in% c("All", "All Car", "All Truck")) |>
+    transmute(
+      view = "Regulatory Class",
+      series = regulatory_class,
+      model_year,
+      measure,
+      measure_label,
+      unit,
+      value,
+      formatted_value,
+      model_year_label
     )
-}
+) |>
+  mutate(
+    hover_label = paste0(
+      "<b>", htmltools::htmlEscape(series), "</b>",
+      "<br>Model year: ", model_year_label,
+      "<br>", measure_label, ": ", formatted_value
+    )
+  )
 
-epa_trends <- bind_rows(
-  summarise_epa_trends("vehicle_type", "Vehicle Type"),
-  summarise_epa_trends("Make", "Manufacturer")
-)
-
-available_years <- range(epa_trends$Year, na.rm = TRUE)
-series_names <- sort(unique(epa_trends$series))
+available_years <- range(epa_chart_data$model_year, na.rm = TRUE)
+series_names <- sort(unique(epa_chart_data$series))
 series_colors <- setNames(
   grDevices::hcl.colors(length(series_names), palette = "Dynamic"),
   series_names
 )
-view_options <- c("Vehicle Type", "Manufacturer")
-initial_measure <- names(measure_labels)[[1]]
+view_options <- c("Vehicle Type", "Regulatory Class")
+initial_measure <- "real_world_mpg"
+measure_axis_titles <- c(
+  real_world_mpg = "Real-World MPG",
+  production_share = "Production Share (%)",
+  horsepower = "Horsepower (HP)",
+  weight = "Weight (lbs)",
+  footprint = "Footprint (sq. ft.)"
+)
 
 epa_plot <- plot_ly(height = 560)
 for (view_name in view_options) {
   for (measure_name in names(measure_labels)) {
-    measure_rows <- epa_trends |>
+    measure_rows <- epa_chart_data |>
       filter(view == view_name, measure == measure_name)
 
     for (series_name in sort(unique(measure_rows$series))) {
       series_rows <- measure_rows |>
         filter(series == series_name) |>
-        arrange(Year)
+        arrange(model_year)
+      if (!any(is.finite(series_rows$value))) next
+
       is_initial <- view_name == view_options[[1]] &&
         measure_name == initial_measure
 
       epa_plot <- epa_plot |>
         add_trace(
           data = series_rows,
-          x = ~Year,
-          y = ~average,
+          x = ~model_year,
+          y = ~value,
           text = ~hover_label,
           type = "scatter",
           mode = "lines+markers",
@@ -368,6 +397,7 @@ for (view_name in view_options) {
           line = list(color = unname(series_colors[[series_name]]), width = 2),
           marker = list(size = 4),
           showlegend = FALSE,
+          connectgaps = FALSE,
           hovertemplate = "%{text}<extra></extra>"
         )
     }
@@ -380,7 +410,7 @@ epa_plot <- epa_plot |>
     height = 560,
     margin = list(l = 68, r = 15, t = 72, b = 60),
     title = list(
-      text = "Automotive Trends by Model Year",
+      text = "EPA Automotive Trends",
       x = 0.5,
       xanchor = "center",
       font = list(size = 21, color = "#263b77")
@@ -388,13 +418,13 @@ epa_plot <- epa_plot |>
     xaxis = list(
       title = "Model year",
       range = available_years,
-      dtick = 2,
+      dtick = 5,
       fixedrange = FALSE,
       gridcolor = "#e8eef6",
       zeroline = FALSE
     ),
     yaxis = list(
-      title = paste0(unname(measure_labels[[initial_measure]]), " (MPG)"),
+      title = unname(measure_axis_titles[[initial_measure]]),
       rangemode = "tozero",
       gridcolor = "#e8eef6",
       zeroline = FALSE
@@ -428,14 +458,14 @@ epa_plot <- htmlwidgets::onRender(
     var endYear = dashboard.querySelector('#epa-year-end');
     var yearLabel = dashboard.querySelector('#epa-year-label');
     var view = 'Vehicle Type';
-    var measure = 'highway_mpg';
+    var measure = 'real_world_mpg';
     var seriesVisibility = {};
     var measureTitles = {
-      highway_mpg: 'Highway MPG',
-      city_mpg: 'City MPG',
-      horsepower: 'Engine horsepower (hp)',
-      msrp: 'MSRP (USD)',
-      cylinders: 'Engine cylinders'
+      real_world_mpg: 'Real-World MPG',
+      production_share: 'Production Share (%)',
+      horsepower: 'Horsepower (HP)',
+      weight: 'Weight (lbs)',
+      footprint: 'Footprint (sq. ft.)'
     };
 
     function updateChart() {
@@ -453,13 +483,16 @@ epa_plot <- htmlwidgets::onRender(
       var visibility = el.data.map(function(trace) {
         return trace.meta.view === view &&
           trace.meta.measure === measure &&
-          seriesVisibility[trace.name] !== false;
+          seriesVisibility[
+            [trace.meta.view, trace.meta.measure, trace.name].join('|')
+          ] !== false;
       });
 
       Plotly.restyle(el, {visible: visibility}, traceIndexes);
       Plotly.relayout(el, {
         'xaxis.range': [firstYear, lastYear],
         'yaxis.title.text': measureTitles[measure],
+        'yaxis.autorange': true,
       });
 
       yearLabel.textContent = firstYear + ' - ' + lastYear;
@@ -477,7 +510,8 @@ epa_plot <- htmlwidgets::onRender(
         var item = document.createElement('button');
         var swatch = document.createElement('span');
         var label = document.createElement('span');
-        var isVisible = seriesVisibility[seriesName] !== false;
+        var visibilityKey = [view, measure, seriesName].join('|');
+        var isVisible = seriesVisibility[visibilityKey] !== false;
 
         item.type = 'button';
         item.className = 'epa-legend-item';
@@ -488,7 +522,7 @@ epa_plot <- htmlwidgets::onRender(
         label.textContent = seriesName;
         item.append(swatch, label);
         item.addEventListener('click', function() {
-          seriesVisibility[seriesName] = !isVisible;
+          seriesVisibility[visibilityKey] = !isVisible;
           updateChart();
         });
         legendItems.appendChild(item);
@@ -539,8 +573,8 @@ htmltools::tagList(
         ),
         htmltools::tags$button(
           type = "button",
-          `data-epa-view` = "Manufacturer",
-          "View by Manufacturer"
+          `data-epa-view` = "Regulatory Class",
+          "View by Regulatory Class"
         )
       ),
       htmltools::tags$div(
@@ -601,11 +635,13 @@ htmltools::tagList(
     ),
     htmltools::tags$p(
       class = "epa-data-note",
-      paste0(
-        "Data coverage: ", available_years[[1]], " - ", available_years[[2]],
-        ". MPG, horsepower, MSRP, and cylinder values are averages from the ",
-        "local dataset, not EPA-certified ratings. Production share, weight, ",
-        "and footprint are not present in this CSV."
+      "EPA Summary Automotive Trends data: model years 1975-2024 are final; ",
+      "2025 is preliminary. Missing values are shown as gaps, not estimated. ",
+      htmltools::tags$a(
+        href = "https://www.epa.gov/automotive-trends/about-automotive-trends-data",
+        target = "_blank",
+        rel = "noopener",
+        "About the EPA data"
       )
     )
   )
